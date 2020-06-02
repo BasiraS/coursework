@@ -28,4 +28,4 @@ cut -d, -f12 201402-citibike-tripdata.csv | sort | uniq -c | head -n -1 | sort -
 cut -d, -f5 201402-citibike-tripdata.csv | grep '[0-9] St.*[0-9] Ave' | sort| uniq -c
 
 # compute the average trip duration
-cut -d, -f1 201402-citibike-tripdata.csv | grep -o '[0-9]\{3\}' | awk '{sum+=$1;count+=1} END {print sum/count;}'
+cut -d, -f1 201402-citibike-tripdata.csv | grep -o '[0-9].*[0-9]' | awk '{sum+=$1;count+=1} END {print sum/count;}'
