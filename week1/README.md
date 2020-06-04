@@ -106,6 +106,8 @@ Install tools: [Ubuntu on Windows](https://msdn.microsoft.com/en-us/commandline/
 
   * Take a look at [The Anatomy of the Long Tail](https://5harad.com/papers/long_tail.pdf) and think about how to generate Figures 1 and 2
 
+-->
+
 
 # Day 3
 
@@ -113,23 +115,28 @@ Install tools: [Ubuntu on Windows](https://msdn.microsoft.com/en-us/commandline/
 
   * See the [Data Wrangling in R](https://speakerdeck.com/jhofman/modeling-social-data-lecture-3-data-manipulation-in-r) slides
   * Review [intro_to_r.ipynb](intro_to_r.ipynb) for an introduction to R
-  * Have a look at [Codecademy's introduction to R](https://www.codecademy.com/learn/learn-r)
-  * Read chapters 2 and 3 of [R for Data Science](http://r4ds.had.co.nz)
+  * Do the free portion of [Codecademy's introduction to R](https://www.codecademy.com/learn/learn-r), chapters 1, 2, and 3
+  * See chapters 1, 2, and 4 of [R for Data Science](http://r4ds.had.co.nz) for background on using R and Rstudio (chapter numbers correspond to the online edition)
+<!--   * Read chapters 2 and 3 of [R for Data Science](http://r4ds.had.co.nz) -->
 
 ## R counting exercises
-  * Use the [musical pairs script](students/musical_pairs.sh) we wrote together yesterday to determine your programming partner each day
+  * Use the [musical pairs script](students/musical_pairs.sh) to determine your programming partner each day
   * Fill in solutions to the counting exercises under each comment in [citibike.R](citibike.R)
+  * Read chapter 5 of [R for Data Science](http://r4ds.had.co.nz) and do the following exercises:
+    * Section [5.2.4](https://r4ds.had.co.nz/transform.html#exercises-8), exercises 1 and 3
+    * Section [5.5.2](https://r4ds.had.co.nz/transform.html#exercises-11), exercise 2
+    * Section [5.7.1](https://r4ds.had.co.nz/transform.html#exercises-13), exercise 3
 
 ## Learn more
   * References:
     * [Basic types](http://www.r-tutor.com/r-introduction/basic-data-types): (numeric, character, logical, factor)
     * Vectors, lists, dataframes: a [one page reference](http://www.statmethods.net/input/datatypes.html) and [more details](https://en.wikibooks.org/wiki/R_Programming/Data_types)
 	* [Cyclismo's](http://www.cyclismo.org/tutorial/R/index.html) more extensive tutorial
-    * Hadley Wickham's [style guide](http://adv-r.had.co.nz/Style.html)
+	* Rstudio's [data wrangling cheatsheet](http://www.rstudio.com/wp-content/uploads/2015/02/data-wrangling-cheatsheet.pdf)
+	* The [tidyverse style guide](https://style.tidyverse.org)
+	* Hadley Wickham's [style guide](http://adv-r.had.co.nz/Style.html)
 	* The [dplyr vignette](https://cran.r-project.org/web/packages/dplyr/vignettes/dplyr.html)
 	* Sean Anderson's [dplyr and pipes examples](http://seananderson.ca/2014/09/13/dplyr-intro.html) ([code](https://github.com/seananderson/dplyr-intro-2014) on github)
-	* Rstudio's [data wrangling cheatsheet](http://www.rstudio.com/wp-content/uploads/2015/02/data-wrangling-cheatsheet.pdf)
-	* The [tidyverse style guide]
 
   * Tutorials:
   	* [DataCamp's introduction to R](http://datacamp.com/courses/free-introduction-to-r) tutorials (or Hadley's [Advanced R](http://adv-r.had.co.nz) if you're a pro)
@@ -143,12 +150,17 @@ Install tools: [Ubuntu on Windows](https://msdn.microsoft.com/en-us/commandline/
 
   * See the [Data visualization](https://speakerdeck.com/jhofman/modeling-social-data-lecture-4-data-visualization) slides
   * Review [visualization_with_ggplot2.ipynb](visualization_with_ggplot2.ipynb) for an introduction to data visualization with ggplot2
-  * Read chapter 1 of [R for Data Science](http://r4ds.had.co.nz)
 
 ## Plotting exercises   
-  * Use the `download_trips.sh` script to grab all trip data from 2014
-  * Run the [load_trips.R](load_trips.R) file to generate `trips.RData`
-  * Write code in [plot_trips.R](plot_trips.R) to reproduce and extend the visualizations we made this morning using `trips.RData`
+  * Read chapter 3 of the online edition of [R for Data Science](http://r4ds.had.co.nz) and do the following exercises:
+    * Section [3.3.1](https://r4ds.had.co.nz/data-visualisation.html#exercises-1), exercises 1, 2, and 3
+    * Section [3.5.1](https://r4ds.had.co.nz/data-visualisation.html#exercises-2), exercises 1 and 4
+    * Section [3.6.1](https://r4ds.had.co.nz/data-visualisation.html#exercises-3), exercises 5 and 6
+    * Section [3.8.1](https://r4ds.had.co.nz/data-visualisation.html#exercises-5), exercises 1 and 2
+  * Citibike plots
+    * Modify and use the `download_trips.sh` script to grab all months of trip data from 2014
+    * Run the [load_trips.R](load_trips.R) file to generate `trips.RData`
+    * Write code in [plot_trips.R](plot_trips.R) to create visualizations using `trips.RData`
 
 ## Learn more
   * Tutorials:
@@ -159,5 +171,3 @@ Install tools: [Ubuntu on Windows](https://msdn.microsoft.com/en-us/commandline/
     * The [R Graphics Cookbook](http://www.cookbook-r.com/Graphs/)
     * The [official ggplot2 docs](http://docs.ggplot2.org/current/)
     * Videos on [Visualizing Data with ggplot2](http://varianceexplained.org/RData/lessons/lesson2/)
-
--->
