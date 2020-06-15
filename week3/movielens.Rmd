@@ -35,6 +35,13 @@ head(ratings) %>% kable()
 
 ```{r dist-ratings}
 # plot the distribution of rating values https://speakerdeck.com/jhofman/modeling-social-data-lecture-2-introduction-to-counting?slide=26
+
+ratings %>%
+  ggplot(aes(x = rating)) +
+  geom_bar(fill="gray25") +
+  scale_y_continuous(label = comma) +
+  xlab('Rating') +
+  ylab('Number of ratings')
 ```
 
 ## Per-movie stats
@@ -42,24 +49,67 @@ head(ratings) %>% kable()
 ```{r aggregate-by-movie}
 # aggregate ratings by movie, computing mean and number of ratings
 # hint: use the n() function for easy counting within a group
+
+ratings %>%
+  group_by(movie_id) %>%
+  summarize(num_ratings = n(), mean_rating = mean(rating))
 ```
 
 ```{r dist-movie-popularity}
 # plot distribution of movie popularity (= number of ratings the movie received)
 # hint: try scale_x_log10() for a logarithmic x axis
+
+ratings %>%
+  group_by(movie_id) %>%
+  summarize(num_ratings = n(), mean_rating = mean(rating)) %>%
+  ggplot(aes(x = num_ratings)) +
+  geom_histogram(bins = 60) +
+  scale_x_log10(label = comma) +
+  scale_y_continuous(label = comma) +
+  xlab('Number of ratings') +
+  ylab('Number of movies')
 ```
 
 ```{r dist-mean-ratings-by-movie}
 # plot distribution of mean ratings by movie https://speakerdeck.com/jhofman/modeling-social-data-lecture-2-introduction-to-counting?slide=28
 # hint: try geom_histogram and geom_density
+
+ratings %>%
+  group_by(movie_id) %>%
+  summarize(num_ratings = n(), mean_rating = mean(rating)) %>%
+  ggplot(aes(x = mean_rating)) +
+  geom_histogram(bins = 40, fill = "gray25") +
+  scale_y_continuous(label = comma) +
+  xlab('Mean Rating by Movie') +
+  ylab('Density')
+
+ratings %>%
+  group_by(movie_id) %>%
+  summarize(num_ratings = n(), mean_rating = mean(rating)) %>%
+  ggplot(aes(x = mean_rating)) +
+  geom_density(fill = "gray25") +
+  scale_y_continuous(label = comma) +
+  xlab('Mean Rating by Movie') +
+  ylab('Density')
 ```
 
 ```{r cdf-movie-pop}
 # rank movies by popularity and compute the cdf, or fraction of movies covered by the top-k moves https://speakerdeck.com/jhofman/modeling-social-data-lecture-2-introduction-to-counting?slide=30
 # hint: use dplyr's rank and arrange functions, and the base R sum and cumsum functions
+
 # store the result in a new data frame so you can use it in creating figure 2 from the paper below
+movie_rankings <- 
+ratings %>%
+  group_by(movie_id) %>%
+  summarize(num_ratings = n()) %>%
+  arrange(desc(num_ratings)) %>%
+  mutate(movie_rank = rank(desc(num_ratings)), cumsum = cumsum(num_ratings), sum = sum(num_ratings), cdf = cumsum(num_ratings) / sum(num_ratings))
 
 # plot the CDF of movie popularity
+movie_rankings %>%
+  ggplot(aes(x = movie_rank, y = cdf)) +
+  geom_line() +
+  scale_y_continuous(labels = scales::percent)
 ```
 
 
@@ -67,11 +117,23 @@ head(ratings) %>% kable()
 
 ```{r aggregate-by-user}
 # aggregate ratings by user, computing mean and number of ratings
+ratings %>%
+  group_by(user_id) %>%
+  summarize(num_ratings = n(), mean_rating = mean(rating))
 ```
 
 ```{r dist-user-activity}
 # plot distribution of user activity (= number of ratings the user made)
 # hint: try a log scale here
+ratings %>%
+  group_by(user_id) %>%
+  summarize(num_ratings = n(), mean_rating = mean(rating)) %>%
+  ggplot(aes(x = num_ratings)) +
+  geom_histogram(bins = 50) +
+  scale_x_log10(label = comma) +
+  scale_y_continuous(label = comma) +
+  xlab('Number of ratings') +
+  ylab('Number of Users')
 ```
 
 # Anatomy of the long tail
@@ -89,4 +151,34 @@ head(ratings) %>% kable()
 # paper, produce one curve for the 100% user satisfaction level and
 # another for 90%---do not, however, bother implementing the null
 # model (shown in the dashed lines).
+
+user <- left_join(ratings, movie_rankings) %>%
+  group_by(user_id) %>%
+  summarize(count = n()) %>%
+  filter(count >= 10)
+
+temp <- left_join(user, ratings)
+
+longtail <- left_join(temp, movie_rankings)
+
+temp2 <- longtail %>%
+  group_by(user_id) %>%
+  summarize(quant100 = max(movie_rank), quant90 = quantile(movie_rank, .9))
+
+line100 <- temp2 %>%
+  group_by(quant100) %>%
+  summarize(num_users = n()) %>%
+  mutate(satisified100 = cumsum(num_users) / sum(num_users))
+
+line90 <- temp2 %>%
+  group_by(quant90) %>%
+  summarize(num_users = n()) %>%
+  mutate(satisified90 = cumsum(num_users) / sum(num_users))
+
+temp3 <- left_join(temp2, line90, by = c('quant90' = 'quant90'))
+
+left_join(temp3, line100, by = c('quant100' = 'quant100')) %>%
+  ggplot() +
+  geom_line(aes(x = quant90, y = satisified90)) +
+  geom_line(aes(x = quant100, y = satisified100))
 ```
