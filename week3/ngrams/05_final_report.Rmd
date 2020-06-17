@@ -210,7 +210,7 @@ Write up your answer to Part F here.
 
 Write up your answer to Part G here. Include code that shows the years with the smallest and largest half-lifes.
 
-> There were one outlier, which was the year 1800. The year 1800 was forgotten more slowely, since it had a half_life of 23. It is a bit difficult to determine the pattern of the graph, however, it does seem that the as the term increases, it is more likyly one will foget particularly quickly. The values of the half-life seem to get closer as we move down the terms. 
+> There was one outlier, which was the year 1800. The year 1800 was forgotten more slowely, since it had a half_life of 23. It is a bit difficult to determine the pattern of the graph, however, it does seem that the as the term increases, it is more likyly one will foget particularly quickly. The values of the half-life seem to get closer as we move down the terms. 
 
 ```{r}
 half_life %>%
