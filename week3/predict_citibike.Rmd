@@ -289,13 +289,13 @@ ggplot(plot_data, aes(x = pred, y = num_trips)) +
 
 ```{r test-dataset}
 
-# chose final k
+final_model = model
 
 trips_per_day_test <- trips_per_day_test %>%
-  add_predictions(model) %>%
+  add_predictions(final_model)
 
 ggplot(trips_per_day_test, aes(x = tmax, y = num_trips)) +
-  geom_point(aes(color = split)) +
+  geom_point() +
   geom_line(aes(y = pred)) +
   geom_smooth(se = FALSE) +
   xlab('Maximum temperature') +
@@ -303,11 +303,11 @@ ggplot(trips_per_day_test, aes(x = tmax, y = num_trips)) +
   scale_y_continuous()
 
 # Results
-rsquare(model, plot_data)
-rmse(model, plot_data)
+rsquare(final_model, trips_per_day_test)
+rmse(final_model, trips_per_day_test)
 
 ggplot(trips_per_day_test, aes(x = ymd, y = num_trips)) +
-  geom_point(aes(color = split)) +
+  geom_point() +
   geom_line(aes(y = pred)) +
   geom_smooth(se = FALSE) +
   xlab('Date') +
@@ -315,10 +315,14 @@ ggplot(trips_per_day_test, aes(x = ymd, y = num_trips)) +
   scale_y_continuous()
 
 ggplot(trips_per_day_test, aes(x = pred, y = num_trips)) +
-  geom_point(aes(color = split)) +
+  geom_point() +
   geom_abline() +
   xlab('Predicted Trips Count') +
   ylab('Actual Trip Count') +
   scale_y_continuous()
+
+
+
+# save(final_model, file = "mod.RData")
 ```
 
