@@ -1,0 +1,324 @@
+---
+title: "Predicting daily Citibike trips (open-ended)"
+author: "Basira Shirzad"
+date: "'`r Sys.time()`"
+output: 
+  html_document:
+    toc: yes
+    toc_depth: '3'
+    df_print: paged
+  pdf_document: 
+    toc: yes
+    toc_depth: 3
+---
+
+# Setup
+
+Load some packages to help us model our data
+```{r setup}
+library(tidyverse)
+library(scales)
+library(modelr)
+library(lubridate)
+
+# set plot theme
+theme_set(theme_bw())
+options(repr.plot.width=4, repr.plot.height=3)
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Load and preview data
+
+Read data from the `trips_per_day.tsv` file
+
+```{r load-trip-data}
+trips_per_day <- read_tsv('trips_per_day.tsv')
+head(trips_per_day)
+```
+Read data from the `US_Bank_holidays` file
+
+```{r load-holiday-data}
+holidays <- read_csv('US_Bank_holidays', col_names = c('day_num', 'ymd', 'holiday_name'))
+head(holidays)
+```
+Create a model_data frame that includes information from both files 
+
+```{r load-new-data}
+model_data <- trips_per_day %>% 
+  mutate(day = as.factor(wday(ymd, label = F)), is_weekday = between(wday(ymd),2,6), is_rain = prcp > 0) %>%
+  left_join(holidays) %>%
+  mutate(is_holiday = !is.na(holiday_name)) %>%
+  select(ymd, num_trips, prcp, tmax, tmin, day, is_weekday, is_rain, is_holiday)
+head(model_data)
+```
+# Plot Graph
+
+Plot for the number of trips taken as a function of the minimum temperature on each day.
+
+```{r weather-tmin-plot}
+ggplot(model_data, aes(x = tmin, y = num_trips)) +
+  geom_point(aes(colour = day)) +
+  xlab('Minimum temperature') +
+  ylab('Daily trips') +
+  scale_y_continuous()
+
+ggplot(model_data, aes(x = tmin, y = num_trips)) +
+  geom_point(aes(colour = is_weekday)) +
+  xlab('Minimum temperature') +
+  ylab('Daily trips') +
+  scale_y_continuous()
+
+ggplot(model_data, aes(x = tmin, y = num_trips)) +
+  geom_point(aes(colour = is_rain)) +
+  xlab('Minimum temperature') +
+  ylab('Daily trips') +
+  scale_y_continuous()
+
+ggplot(model_data, aes(x = tmin, y = num_trips)) +
+  geom_point(aes(colour = is_holiday)) +
+  xlab('Minimum temperature') +
+  ylab('Daily trips') +
+  scale_y_continuous()
+```
+
+Plot for the number of trips taken as a function of the maximum temperature on each day.
+
+```{r weather-tmax-plot}
+ggplot(model_data, aes(x = tmax, y = num_trips)) +
+  geom_point(aes(colour = day)) +
+  xlab('Maximum temperature') +
+  ylab('Daily trips') +
+  scale_y_continuous()
+
+ggplot(model_data, aes(x = tmax, y = num_trips)) +
+  geom_point(aes(colour = is_weekday)) +
+  xlab('Maximum temperature') +
+  ylab('Daily trips') +
+  scale_y_continuous()
+
+ggplot(model_data, aes(x = tmax, y = num_trips)) +
+  geom_point(aes(colour = is_rain)) +
+  xlab('Maximum temperature') +
+  ylab('Daily trips') +
+  scale_y_continuous()
+
+ggplot(model_data, aes(x = tmax, y = num_trips)) +
+  geom_point(aes(colour = is_holiday)) +
+  xlab('Maximum temperature') +
+  ylab('Daily trips') +
+  scale_y_continuous()
+```
+
+# Cross-validation
+
+Fitting different polynomials to the data and using cross-validation (shuffled data and used 80% of the data for training and 10% of the data for validation) to find the polynomial degree that generalizes best to held out data.
+
+```{r cross-validation}
+# Random number generator that produces the same sequence of numbers
+set.seed(42)
+
+num_days <- nrow(model_data)
+frac_train <- 0.8 # train on 80% of the data
+num_train <- floor(num_days * frac_train)
+
+# randomly sample rows for the training set 
+ndx <- sample(1:num_days, num_train, replace=F)
+
+# used to fit the model
+trips_per_day_train <- model_data[ndx, ] 
+
+# used to evaluate the fit
+trips_per_day_remaining <- model_data[-ndx, ]
+num_remaining = floor(nrow(trips_per_day_remaining)/2)
+
+ndx2 <- sample(1:nrow(trips_per_day_remaining), num_remaining, replace = F)
+trips_per_day_validate <- trips_per_day_remaining[ndx2, ]
+trips_per_day_test <- trips_per_day_remaining[-ndx2, ] 
+```
+
+# Evaluation
+
+Evaluating models from degree 1 to degree 8, fitting on the training data and evaluate on the validation data.
+
+```{r evaluate-models}
+# fit a model for each polynomial degree
+K <- 1:8
+train_err <- c()
+validate_err <- c()
+for (k in K) {
+  
+    # fit on the training data
+    model <- lm(num_trips ~ poly(tmin, k, raw = T) + poly(tmax, k, raw = T) + day + is_weekday + is_rain + is_holiday, data=trips_per_day_train)
+    
+    # evaluate on the training data
+    train_err[k] <- sqrt(mean((predict(model, trips_per_day_train) - trips_per_day_train$num_trips)^2))
+
+    # evaluate on the validate data
+    validate_err[k] <- sqrt(mean((predict(model, trips_per_day_validate) - trips_per_day_validate$num_trips)^2))
+}
+
+summary(model)
+```
+
+Plot for the training and validation error as a function of the polynomial degree.
+
+```{r plot-errors}
+plot_data <- data.frame(K, train_err, validate_err) %>%
+  gather("split", "error", -K)
+
+ggplot(plot_data, aes(x=K, y=error, color=split)) +
+  geom_line() +
+  scale_x_continuous(breaks=K) +
+  xlab('Polynomial Degree') +
+  ylab('RMSE')
+```
+
+Fitting and plotting the model on all of the data 
+
+```{r test-data}
+# chose final k
+k = 4
+model <- lm(num_trips ~ poly(tmin, k, raw = T) + poly(tmax, k, raw = T) + day + is_weekday + is_rain + is_holiday, data=trips_per_day_train)
+
+trips_per_day_train <- trips_per_day_train %>%
+  add_predictions(model) %>%
+  mutate(split = "train")
+trips_per_day_validate <- trips_per_day_validate %>%
+  add_predictions(model) %>%
+  mutate(split = "validate")
+plot_data <- bind_rows(trips_per_day_train, trips_per_day_validate)
+
+ggplot(plot_data, aes(x = tmax, y = num_trips)) +
+  geom_point(aes(color = split)) +
+  geom_line(aes(y = pred)) +
+  geom_smooth(se = FALSE) +
+  xlab('Maximum temperature') +
+  ylab('Daily trips') +
+  scale_y_continuous()
+```
+```{r results}
+rsquare(model, plot_data)
+rmse(model, plot_data)
+```
+
+# Re-Evaluating 
+
+Re-evaluating models from degree 1 to degree 8, fitting on the training data and evaluate on the validation data.
+
+```{r re-evaluate-models}
+# fit a model for each polynomial degree
+K <- 1:8
+train_err <- c()
+validate_err <- c()
+for (k in K) {
+  
+    # fit on the training data
+    model <- lm(num_trips ~ poly(tmax, k, raw = T) + day + is_rain + is_holiday, data=trips_per_day_train)
+    
+    # evaluate on the training data
+    train_err[k] <- sqrt(mean((predict(model, trips_per_day_train) - trips_per_day_train$num_trips)^2))
+
+    # evaluate on the validate data
+    validate_err[k] <- sqrt(mean((predict(model, trips_per_day_validate) - trips_per_day_validate$num_trips)^2))
+}
+
+summary(model)
+```
+
+Re-Plot for the training and validation error as a function of the polynomial degree.
+
+```{r re-plot-errors}
+plot_data <- data.frame(K, train_err, validate_err) %>%
+  gather("split", "error", -K)
+
+ggplot(plot_data, aes(x=K, y=error, color=split)) +
+  geom_line() +
+  scale_x_continuous(breaks=K) +
+  xlab('Polynomial Degree') +
+  ylab('RMSE')
+```
+
+Re-fitting and plotting the model on all of the data 
+
+```{r re-test-data}
+# chose final k
+k = 5
+model <- lm(num_trips ~ poly(tmax, k, raw = T) + day + is_rain + is_holiday, data=trips_per_day_train)
+
+trips_per_day_train <- trips_per_day_train %>%
+  add_predictions(model) %>%
+  mutate(split = "train")
+trips_per_day_validate <- trips_per_day_validate %>%
+  add_predictions(model) %>%
+  mutate(split = "validate")
+plot_data <- bind_rows(trips_per_day_train, trips_per_day_validate)
+
+ggplot(plot_data, aes(x = tmax, y = num_trips)) +
+  geom_point(aes(color = split)) +
+  geom_line(aes(y = pred)) +
+  geom_smooth(se = FALSE) +
+  xlab('Maximum temperature') +
+  ylab('Daily trips') +
+  scale_y_continuous()
+```
+```{r final-results}
+rsquare(model, plot_data)
+rmse(model, plot_data)
+```
+
+# Final Best Fit Model
+
+```{r graph-1}
+ggplot(plot_data, aes(x = ymd, y = num_trips)) +
+  geom_point(aes(color = split)) +
+  geom_line(aes(y = pred)) +
+  geom_smooth(se = FALSE) +
+  xlab('Date') +
+  ylab('Predicted Trips (red) & Actual Trips (black)') +
+  scale_y_continuous()
+
+ggplot(plot_data, aes(x = pred, y = num_trips)) +
+  geom_point(aes(color = split)) +
+  geom_abline() +
+  xlab('Predicted Trips Count') +
+  ylab('Actual Trip Count') +
+  scale_y_continuous()
+```
+
+# Testing on Test Data
+
+```{r test-dataset}
+
+# chose final k
+
+trips_per_day_test <- trips_per_day_test %>%
+  add_predictions(model) %>%
+
+ggplot(trips_per_day_test, aes(x = tmax, y = num_trips)) +
+  geom_point(aes(color = split)) +
+  geom_line(aes(y = pred)) +
+  geom_smooth(se = FALSE) +
+  xlab('Maximum temperature') +
+  ylab('Daily trips') +
+  scale_y_continuous()
+
+# Results
+rsquare(model, plot_data)
+rmse(model, plot_data)
+
+ggplot(trips_per_day_test, aes(x = ymd, y = num_trips)) +
+  geom_point(aes(color = split)) +
+  geom_line(aes(y = pred)) +
+  geom_smooth(se = FALSE) +
+  xlab('Date') +
+  ylab('Predicted Trips (red) & Actual Trips (black)') +
+  scale_y_continuous()
+
+ggplot(trips_per_day_test, aes(x = pred, y = num_trips)) +
+  geom_point(aes(color = split)) +
+  geom_abline() +
+  xlab('Predicted Trips Count') +
+  ylab('Actual Trip Count') +
+  scale_y_continuous()
+```
+
