@@ -1,0 +1,87 @@
+---
+title: "Test Citibike Predictions"
+author: "Basira Shirzad"
+date: "'`r Sys.time()`"
+output: 
+  html_document:
+    toc: yes
+    toc_depth: '3'
+    df_print: paged
+  pdf_document: 
+    toc: yes
+    toc_depth: 3
+---
+
+# Setup
+
+Load some packages to help us model our data
+```{r setup}
+library(tidyverse)
+library(scales)
+library(modelr)
+library(lubridate)
+
+# set plot theme
+theme_set(theme_bw())
+options(repr.plot.width=4, repr.plot.height=3)
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Load and preview data
+
+Load in the `trips_2015.Rdata` file
+
+```{r load-trip-data}
+
+load('.RData')
+load('trips_2015.RData')
+
+model_data <- trips_per_day_2015 %>% 
+  mutate(day = as.factor(wday(ymd, label = F)), is_weekday = between(wday(ymd),2,6), is_rain = prcp > 0) %>%
+  left_join(holidays) %>%
+  mutate(is_holiday = !is.na(holiday_name)) %>%
+  select(ymd, num_trips, prcp, tmax, tmin, day, is_weekday, is_rain, is_holiday)
+head(model_data)
+```
+
+# Results
+
+```{r test-dataset}
+
+trips_2015_test <- model_data %>%
+  add_predictions(final_model)
+
+ggplot(trips_2015_test, aes(x = tmax, y = num_trips)) +
+  geom_point() +
+  geom_line(aes(y = pred)) +
+  geom_smooth(se = FALSE) +
+  xlab('Maximum temperature') +
+  ylab('Daily trips') +
+  scale_y_continuous()
+
+preds <- trips_2015_test$pred
+
+# Results
+rsquare(final_model, trips_2015_test)
+rmse(final_model, trips_2015_test)
+
+ggplot(trips_2015_test, aes(x = ymd, y = num_trips)) +
+  geom_point() +
+  geom_line(aes(y = pred)) +
+  geom_smooth(se = FALSE) +
+  xlab('Date') +
+  ylab('Predicted Trips (red) & Actual Trips (black)') +
+  scale_y_continuous()
+
+ggplot(trips_2015_test, aes(x = pred, y = num_trips)) +
+  geom_point() +
+  geom_abline() +
+  xlab('Predicted Trips Count') +
+  ylab('Actual Trip Count') +
+  scale_y_continuous()
+```
+
+# Conclusion
+
+The model I have decided on performed very well when I used it on the training data however, on the 2014 testing data, its performance was average as well as the 2015 testing data. The rsquare for both the 2014 testing data and 2015 testing data were around the same, however, the rmse values for the 2014 and 2015 were very different. The 2015 data had a much higher rmse than the 2014, which I don't quite understand. Overall this was a nice challenge and I believe the mistakes I have made were that I assumed that if my training data performed very well on that model, it would also work very well on the testing data. I should have looked in more closely on the affect each feature had on the data and I should have chosen the degree more carefully. I went with a more lower degree because I worried about overfitting, but I think if I chosen a little more higher degree, the model would have performed slightly better. I should have also added some more features that could have enhance the model. One challenge I faced when running the model on the new data is that I did not realize that the tmax and tmin values are divided by 10 in the 2014 data, so I started getting some extreme values that did not make clear sense. Once, I realized that I went back to fix the 2015 data. 
+
